@@ -38,10 +38,15 @@ jobs:
         #   ANDROID_KEYSTORE_PASSWORD: ${{ secrets.android_keystore_password }}
         #   ANDROID_KEY_ALIAS: ${{ secrets.android_key_alias }}
           # ANDROID_KEY_PASSWORD: ${{ secrets.android_key_password }}
-
+          
+      - name: Set env vars
+        run: |
+          echo "TAG=$(git describe --tags --abbrev=1 || echo ${{ github.event.repository.name }})" >> $GITHUB_ENV
+          
       - name: Create Github release
         uses: softprops/action-gh-release@v2
         with:
+          tag_name: ${{ env.TAG }}
           prerelease: ${{ env.prerelease }}
           files: app/build/outputs/apk/ose/debug/*.apk
           fail_on_unmatched_files: true
