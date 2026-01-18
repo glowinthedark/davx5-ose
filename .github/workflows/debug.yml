@@ -39,6 +39,13 @@ jobs:
         #   ANDROID_KEY_ALIAS: ${{ secrets.android_key_alias }}
           # ANDROID_KEY_PASSWORD: ${{ secrets.android_key_password }}
           
+      - name: Upload APK artifacts - ${{ env.repository_name }}
+        if: false
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ github.event.repository.name }}-debug.apk
+          path: app/build/outputs/apk/ose/debug/*.apk
+          
       - name: Set env vars
         run: |
           echo "TAG=$(git describe --tags --abbrev=1 || echo ${{ github.event.repository.name }})" >> $GITHUB_ENV
