@@ -11,7 +11,7 @@ concurrency:
 
 env:
   prerelease: ${{ contains(github.ref_name, '-alpha') || contains(github.ref_name, '-beta') || contains(github.ref_name, '-rc') }}
-
+  
 jobs:
   build:
     name: Create debug apk
@@ -30,16 +30,35 @@ jobs:
       # - name: Prepare keystore
       #   run: echo ${{ secrets.android_keystore_base64 }} | base64 -d >$GITHUB_WORKSPACE/keystore.jks
 
-      - name: Build signed package
+      - name: Get JKS Keystore
+        id: decode_keystore
+        uses: timheuer/base64-to-file@v1.2
+        with:
+          fileName: 'keystore.jks'
+          encodedString: ${{ secrets.KEYSTORE_BASE64 }}
+          
+      - name: print JKS keystore path
+        run: echo "KEYSTORE PATH=${{ steps.decode_keystore.outputs.filePath}}"
+
+      - name: Build Release APK
+        env:
+          KEYSTORE: ${{ steps.decode_keystore.outputs.filePath}}
+          KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
+          KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
+          STORE_PASSWORD: ${{ secrets.STORE_PASSWORD }}
+        run: ./gradlew bundleRelease --no-daemon app:assembleRelease
+        
+      - name: Upload Release APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ github.event.repository.name }}-release.apk
+          path: app/build/outputs/apk/ose/release/*.apk
+
+      - name: Build debug package
         # Use build cache to speed up building of build variants, but clean caches from previous tests before
         run: ./gradlew --build-cache --configuration-cache --no-daemon app:clean app:assembleDebug
-        # env:
-        #   ANDROID_KEYSTORE: ${{ github.workspace }}/keystore.jks
-        #   ANDROID_KEYSTORE_PASSWORD: ${{ secrets.android_keystore_password }}
-        #   ANDROID_KEY_ALIAS: ${{ secrets.android_key_alias }}
-          # ANDROID_KEY_PASSWORD: ${{ secrets.android_key_password }}
           
-      - name: Upload APK artifacts - ${{ env.repository_name }}
+      - name: Upload debug APK artifacts - ${{ env.repository_name }}
         if: false
         uses: actions/upload-artifact@v4
         with:
@@ -55,6 +74,8 @@ jobs:
         with:
           tag_name: ${{ env.TAG }}
           prerelease: ${{ env.prerelease }}
-          files: app/build/outputs/apk/ose/debug/*.apk
+          files: |
+            app/build/outputs/apk/ose/debug/*.apk
+            app/build/outputs/apk/ose/release/*.apk
           fail_on_unmatched_files: true
           generate_release_notes: true
