@@ -1,4 +1,4 @@
-name: Create debug APK
+name: Create APKs
 on:
   # push:
   #   tags:
@@ -6,7 +6,7 @@ on:
   workflow_dispatch: 
 
 concurrency:
-  group: debug-${{ github.ref }}
+  group: release-debug-${{ github.ref }}
   cancel-in-progress: true
 
 env:
@@ -46,7 +46,7 @@ jobs:
           KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
           KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
           STORE_PASSWORD: ${{ secrets.STORE_PASSWORD }}
-        run: ./gradlew bundleRelease --no-daemon app:assembleRelease
+        run: ./gradlew --no-daemon app:assembleRelease
         
       - name: Upload Release APK
         uses: actions/upload-artifact@v4
